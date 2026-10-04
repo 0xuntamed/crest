@@ -16,9 +16,12 @@ export async function generateMetadata(props: PageProps<"/c/[slug]">): Promise<M
   const c = await getCrest(slug);
   if (!c) return { title: "Not found" };
   const by = c.author_name ? ` by ${c.author_name}` : "";
+  const title = c.title || "Untitled";
+  const description = `${TIER_INFO[c.tier].label}${by}. ${c.metrics.words} words, ${pct(c.metrics.typedShare, 0)} typed, written over ${formatDuration(c.metrics.activeMs)}. Verified by Crest.`;
   return {
-    title: c.title || "Untitled",
-    description: `${TIER_INFO[c.tier].label}${by}. ${c.metrics.words} words, ${pct(c.metrics.typedShare, 0)} typed, written over ${formatDuration(c.metrics.activeMs)}. Verified by Crest.`,
+    title,
+    description,
+    openGraph: { title, description, type: "article", siteName: "Crest" },
     robots: c.is_public ? undefined : { index: false },
   };
 }

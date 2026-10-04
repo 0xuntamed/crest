@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  // share images read these at request time
+  outputFileTracingIncludes: { "/**": ["./assets/fonts/*.woff"] },
   async headers() {
     return [
       {

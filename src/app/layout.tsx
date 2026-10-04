@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   title: { default: "Crest: proof a human wrote it", template: "%s · Crest" },
   description:
     "Write in Crest and every keystroke joins a hash-chained, server-witnessed log. Seal it to get a signed, replayable certificate of human authorship.",
+  openGraph: { siteName: "Crest", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
