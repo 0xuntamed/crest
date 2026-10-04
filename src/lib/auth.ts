@@ -37,3 +37,23 @@ export async function ensureAuthor(): Promise<Author> {
   });
   return { id: rows[0].id, displayName: "" };
 }
+
+// ---------------------------------------------------------------- browser extension (bearer tokens, never cookies)
+
+/** Creates a fresh anonymous author for the extension and returns its secret token. */
+export async function createTokenAuthor(): Promise<string> {
+  const token = randomBytes(32).toString("base64url");
+  await pool.query("insert into authors(token_hash) values ($1)", [hashToken(token)]);
+  return token;
+}
+
+/** Resolves `Authorization: Bearer <token>`. Extension routes use only this, so CORS can stay open. */
+export async function bearerAuthor(req: Request): Promise<Author | null> {
+  const m = /^Bearer ([A-Za-z0-9_-]{20,100})$/.exec(req.headers.get("authorization") ?? "");
+  if (!m) return null;
+  const { rows } = await pool.query<{ id: string; display_name: string }>(
+    "select id, display_name from authors where token_hash = $1",
+    [hashToken(m[1])],
+  );
+  return rows[0] ? { id: rows[0].id, displayName: rows[0].display_name } : null;
+}

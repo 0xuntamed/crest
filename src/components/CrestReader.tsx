@@ -1,21 +1,35 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { applyEvents, EMPTY_DOC, type CrestLog, type DocState, type EditEvent } from "@/lib/core";
+import { applyEvents, EMPTY_DOC, type CrestLog, type DocState, type EditEvent, type Source } from "@/lib/core";
 import { OriginText } from "./OriginText";
 
 type Tab = "read" | "replay";
 
-export function CrestReader({ slug, content, origins }: { slug: string; content: string; origins: string }) {
+const DOCS_TITLES = { p: "pasted", o: "already in the doc", u: "unaccounted" };
+
+export function CrestReader({
+  slug,
+  content,
+  origins,
+  source = "crest",
+}: {
+  slug: string;
+  content: string;
+  origins: string;
+  source?: Source;
+}) {
   const [tab, setTab] = useState<Tab>("read");
   const [highlight, setHighlight] = useState(true);
-  const hasNonTyped = useMemo(() => /[po]/.test(origins), [origins]);
+  const hasNonTyped = useMemo(() => /[pou]/.test(origins), [origins]);
+  const docs = source === "gdocs";
+  const tabs: Tab[] = docs ? ["read"] : ["read", "replay"];
 
   return (
     <section className="card overflow-clip">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b hairline px-4 py-3 sm:px-6">
         <div className="flex rounded-full bg-paper-2 p-1 text-[13px]">
-          {(["read", "replay"] as const).map((t) => (
+          {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -27,7 +41,12 @@ export function CrestReader({ slug, content, origins }: { slug: string; content:
         </div>
         <div className="flex items-center gap-4 text-[12px] text-ink-3">
           <span className="flex items-center gap-1.5"><i className="o-p inline-block h-3 w-4" /> pasted</span>
-          <span className="flex items-center gap-1.5"><i className="o-o inline-block h-3 w-4" /> undo/autocorrect</span>
+          <span className="flex items-center gap-1.5">
+            <i className="o-o inline-block h-3 w-4" /> {docs ? "already in the doc" : "undo/autocorrect"}
+          </span>
+          {docs && (
+            <span className="flex items-center gap-1.5"><i className="o-u inline-block h-3 w-4" /> unaccounted</span>
+          )}
           <label className="flex cursor-pointer items-center gap-2">
             <input type="checkbox" checked={highlight} onChange={(e) => setHighlight(e.target.checked)} className="accent-[var(--wax)]" />
             highlight
@@ -38,10 +57,18 @@ export function CrestReader({ slug, content, origins }: { slug: string; content:
         {tab === "read" ? (
           <>
             {!hasNonTyped && highlight && (
-              <p className="label mb-6 !text-typed">Every character below was typed here.</p>
+              <p className="label mb-6 !text-typed">
+                {docs ? "Every word below was typed during the recording." : "Every character below was typed here."}
+              </p>
+            )}
+            {docs && (
+              <p className="mx-auto mb-6 max-w-[68ch] text-[13px] leading-relaxed text-ink-3">
+                Written in Google Docs, which doesn&apos;t expose cursor positions, so there&apos;s no keystroke replay. Each word
+                is credited only if it appeared in the recorded typing.
+              </p>
             )}
             <div className="prose-read mx-auto max-w-[68ch]">
-              <OriginText content={content} origins={origins} highlight={highlight} />
+              <OriginText content={content} origins={origins} highlight={highlight} titles={docs ? DOCS_TITLES : undefined} />
             </div>
           </>
         ) : (

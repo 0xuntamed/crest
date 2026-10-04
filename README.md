@@ -18,11 +18,39 @@ Nothing is probabilistic: the same log always produces the same text, metrics, t
 | **Crest page** (`/c/:slug`) | Generative wax seal (made from the hash), facts, origin bar, keystroke-rhythm histogram, growth curve, origin-highlighted text, scrub-able replay, in-browser verifier, embeddable badge, raw log download. |
 | **Verify** (`/verify`) | Paste any text to find its crest. Matching ignores case, quotes and whitespace; a paragraph of 60+ characters can match a longer piece. |
 | **Method** (`/method`) | The exact rules, plus what a crest proves and what it can't. |
+| **Google Docs extension** (`extension/`) | Records writing inside Google Docs and seals it as a crest. See below. |
 | **No accounts** | Anonymous author token in an httpOnly cookie; only its hash is stored. |
 
 Tiers, checked in order: **Handwritten** (≥95% of the final text typed, ≥98% witnessed, ≥30 words) →
 **Human-led** (≥75% typed, ≥90% witnessed) → **Assisted** (≥40% typed) → **Assembled**. The thresholds live in
 `RULES` in [`src/lib/core.ts`](src/lib/core.ts).
+
+## Google Docs extension
+
+Docs draws text on a canvas, so an extension can't see cursor positions. Docs crests therefore use the same
+witnessed hash chain and signature but a different, still deterministic, attribution model:
+
+- **Captured:** every keystroke, Backspace/Delete, paste (with its plain text), cut, undo, and caret move, taken from
+  Docs' hidden input iframe. Script-dispatched (untrusted) events are ignored. A snapshot of the document is taken
+  when recording starts.
+- **Sealed against** the document's text, read through the user's own Docs session (`/export?format=txt`, falling
+  back to `/mobilebasic`).
+- **Attribution,** in order: exact pasted passages → typed runs that survive verbatim → paragraphs of the starting
+  snapshot → word by word (typed, then pasted, then pre-existing). Anything left over is **unaccounted** and counts
+  against the typed share. The code is in [`src/lib/docs.ts`](src/lib/docs.ts).
+- **No replay** on Docs crests. Highlighting is per word.
+
+The extension uses its own anonymous bearer token (stored in `chrome.storage.local`) and never the site cookie.
+That's why the `/api/ext/*` routes can allow any origin.
+
+**Install (unpacked):**
+
+1. `chrome://extensions` → turn on **Developer mode** → **Load unpacked** → choose the `extension/` folder.
+2. Click the Crest toolbar icon and set the **Crest server** URL (default `http://localhost:3000`).
+3. Open a Google Doc → **Record with Crest** (bottom-right). Nothing is recorded until you press it.
+
+**Develop without a Google account:** `npm run ext:harness` serves a Docs look-alike on `:4100` that loads the
+unmodified `content.js` with a `chrome.*` shim.
 
 ## Stack
 
@@ -52,8 +80,9 @@ npm run dev          # http://localhost:3000
 Tests:
 
 ```bash
-npm test                         # deterministic core: replay, chain, tamper, witnessing, grading
+npm test                         # deterministic core + Docs attribution (incl. the junk-typing attack)
 npm run test:e2e                 # against a running server (default http://localhost:3000)
+npm run test:e2e:ext             # extension API: Docs recording, attribution, gdocs signature
 ```
 
 ## Deploy

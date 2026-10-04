@@ -36,16 +36,23 @@ export default async function CrestPage(props: PageProps<"/c/[slug]">) {
   const m = c.metrics;
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const info = TIER_INFO[c.tier];
+  const docs = c.source === "gdocs";
+  const unaccounted = m.docs?.unaccountedShare ?? 0;
+  const preexisting = m.docs?.baselineShare ?? 0;
 
   const facts: Array<[string, string, string?]> = [
     ["Words", m.words.toLocaleString()],
     ["Writing time", formatDuration(m.activeMs), `${m.sessions} session${m.sessions === 1 ? "" : "s"} over ${formatDuration(m.spanMs)}`],
-    ["Typed here", pct(m.typedShare), `${m.inserted.t.toLocaleString()} keystrokes`],
+    docs
+      ? ["Typed (matched)", pct(m.typedShare), `${m.inserted.t.toLocaleString()} keystrokes in Google Docs`]
+      : ["Typed here", pct(m.typedShare), `${m.inserted.t.toLocaleString()} keystrokes`],
     ["Pasted", pct(m.pastedShare), m.pasteEvents ? `${m.pasteEvents} paste${m.pasteEvents > 1 ? "s" : ""}, largest ${m.largestPaste.toLocaleString()} chars` : "none at all"],
     ["Revisions", m.deleted.toLocaleString(), `chars deleted · ${m.revisionRatio}× final length`],
     ["Pace", `${m.wpm} wpm`, `${m.pauses.toLocaleString()} thinking pauses`],
     ["Server-witnessed", pct(m.witnessedShare), `${c.chain_length} batches in the chain`],
-    ["Edit events", m.events.toLocaleString(), "replayable, in order"],
+    docs
+      ? ["Unaccounted", pct(unaccounted), "text the log can't explain"]
+      : ["Edit events", m.events.toLocaleString(), "replayable, in order"],
   ];
 
   return (
@@ -62,6 +69,15 @@ export default async function CrestPage(props: PageProps<"/c/[slug]">) {
             {c.author_name ? <>Written by <span className="text-ink">{c.author_name}</span></> : "Written anonymously"} ·
             sealed {dateFmt.format(c.sealed_at)} UTC
           </p>
+          {docs && (
+            <Link
+              href="/method#google-docs"
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper-2 px-3 py-1 text-[12.5px] text-ink-2 hover:text-ink"
+            >
+              <span className="inline-block size-2 rounded-[2px] bg-[#4285f4]" />
+              Written in Google Docs · word-level attribution
+            </Link>
+          )}
           <div className="mt-6 inline-flex items-center gap-3 rounded-full border hairline bg-card py-1.5 pl-1.5 pr-4">
             <span
               className="rounded-full px-3 py-1 font-mono text-[12px] font-semibold uppercase tracking-wider text-white"
@@ -93,12 +109,19 @@ export default async function CrestPage(props: PageProps<"/c/[slug]">) {
         <div className="card p-6">
           <div className="label">Where the text came from</div>
           <div className="mt-6">
-            <OriginBar typed={m.typedShare} pasted={m.pastedShare} other={m.otherShare} />
+            <OriginBar typed={m.typedShare} pasted={m.pastedShare} other={m.otherShare} unaccounted={unaccounted} />
           </div>
           <dl className="mt-4 space-y-1.5 text-[13px]">
-            <div className="flex justify-between"><dt className="text-ink-2">Typed in Crest</dt><dd className="font-mono">{pct(m.typedShare)}</dd></div>
+            <div className="flex justify-between"><dt className="text-ink-2">{docs ? "Typed in Google Docs" : "Typed in Crest"}</dt><dd className="font-mono">{pct(m.typedShare)}</dd></div>
             <div className="flex justify-between"><dt className="text-ink-2">Pasted or dropped</dt><dd className="font-mono">{pct(m.pastedShare)}</dd></div>
-            <div className="flex justify-between"><dt className="text-ink-2">Undo / autocorrect</dt><dd className="font-mono">{pct(m.otherShare)}</dd></div>
+            {docs ? (
+              <>
+                <div className="flex justify-between"><dt className="text-ink-2">Already in the doc</dt><dd className="font-mono">{pct(preexisting)}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink-2">Unaccounted</dt><dd className="font-mono">{pct(unaccounted)}</dd></div>
+              </>
+            ) : (
+              <div className="flex justify-between"><dt className="text-ink-2">Undo / autocorrect</dt><dd className="font-mono">{pct(m.otherShare)}</dd></div>
+            )}
           </dl>
         </div>
         <div className="card p-6">
@@ -108,18 +131,21 @@ export default async function CrestPage(props: PageProps<"/c/[slug]">) {
         <div className="card p-6">
           <div className="label mb-5">How it grew</div>
           <GrowthChart growth={m.growth} />
-          <p className="mt-2 text-[12px] text-ink-3">Length over active writing time. A paste shows up as a sudden cliff.</p>
+          <p className="mt-2 text-[12px] text-ink-3">
+            {docs ? "Estimated length over active writing time." : "Length over active writing time."} A paste shows up as a
+            sudden cliff.
+          </p>
         </div>
       </section>
 
       {/* text */}
       <section className="mt-8">
-        <CrestReader slug={c.slug} content={c.content} origins={c.origins} />
+        <CrestReader slug={c.slug} content={c.content} origins={c.origins} source={c.source} />
       </section>
 
       {/* verify / embed */}
       <section className="mt-8 grid gap-6 md:grid-cols-[1.3fr_1fr]">
-        <VerifyPanel slug={c.slug} />
+        <VerifyPanel slug={c.slug} source={c.source} />
         <EmbedBox slug={c.slug} site={site} label={info.label} />
       </section>
 

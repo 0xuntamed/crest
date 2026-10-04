@@ -1,16 +1,21 @@
 import type { ReactNode } from "react";
 
 /** Renders text with one span per run of identical origin. Typed text is left plain. */
+const TITLES: Record<string, string> = { p: "pasted", o: "undo / autocorrect", u: "unaccounted" };
+const CLASSES: Record<string, string> = { p: "o-p", o: "o-o", u: "o-u" };
+
 export function OriginText({
   content,
   origins,
   highlight,
   caretAt,
+  titles = TITLES,
 }: {
   content: string;
   origins: string;
   highlight: boolean;
   caretAt?: number;
+  titles?: Record<string, string>;
 }) {
   const out: ReactNode[] = [];
   let key = 0;
@@ -25,7 +30,7 @@ export function OriginText({
       if (!highlight || o === "t") out.push(<span key={key++}>{text}</span>);
       else
         out.push(
-          <span key={key++} className={o === "p" ? "o-p" : "o-o"} title={o === "p" ? "pasted" : "undo / autocorrect"}>
+          <span key={key++} className={CLASSES[o] ?? "o-o"} title={titles[o] ?? TITLES[o]}>
             {text}
           </span>,
         );

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Crest for Google Docs",
+  "short_name": "Crest",
+  "version": "0.1.0",
+  "description": "Record how you write in Google Docs and seal it as a signed, verifiable proof of human authorship.",
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": {
+    "default_title": "Crest",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/16.png", "48": "icons/48.png" }
+  },
+  "background": { "service_worker": "background.js" },
+  "permissions": ["storage"],
+  "host_permissions": ["https://docs.google.com/*", "https://*.googleusercontent.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/document/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

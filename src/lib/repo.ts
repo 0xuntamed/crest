@@ -18,8 +18,10 @@ import {
   type CrestLog,
   type EditEvent,
   type Metrics,
+  type Source,
   type Tier,
 } from "./core";
+import { cleanDocText, computeDocsMetrics, isDocsEvent, verifyDocsLog, type DocsEvent } from "./docs";
 
 export class HttpError extends Error {
   constructor(
@@ -44,21 +46,64 @@ export type DraftRow = {
   head_hash: string;
   last_t: string;
   status: "open" | "sealed";
+  source: Source;
+  source_ref: string | null;
   created_ms: string;
   updated_at: Date;
 };
 
-export async function createDraft(authorId: string): Promise<string> {
+export async function createDraft(
+  authorId: string,
+  opts: { source?: Source; sourceRef?: string; title?: string } = {},
+): Promise<string> {
   const id = randomUUID();
   const createdMs = Date.now();
   const genesis = await sha256Hex(genesisInput(id, createdMs));
-  await pool.query("insert into drafts(id, author_id, head_hash, created_ms) values ($1, $2, $3, $4)", [
-    id,
-    authorId,
-    genesis,
-    createdMs,
-  ]);
+  await pool.query(
+    `insert into drafts(id, author_id, head_hash, created_ms, source, source_ref, title)
+     values ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      id,
+      authorId,
+      genesis,
+      createdMs,
+      opts.source ?? "crest",
+      opts.sourceRef ?? null,
+      (opts.title ?? "").slice(0, LIMITS.maxTitleLength),
+    ],
+  );
   return id;
+}
+
+/** The open recording for a Google Doc, if this author already started one. */
+export async function findOpenDocsDraft(authorId: string, docId: string): Promise<DraftRow | null> {
+  const { rows } = await pool.query<DraftRow>(
+    `select * from drafts where author_id = $1 and source = 'gdocs' and source_ref = $2 and status = 'open'
+      order by created_at desc limit 1`,
+    [authorId, docId],
+  );
+  return rows[0] ?? null;
+}
+
+/** Recent Google Docs recordings and crests, for the extension popup. */
+export async function listDocsDrafts(authorId: string) {
+  const { rows } = await pool.query<{
+    id: string;
+    title: string;
+    source_ref: string;
+    seq: number;
+    status: "open" | "sealed";
+    updated_at: Date;
+    slug: string | null;
+    tier: Tier | null;
+  }>(
+    `select d.id, d.title, d.source_ref, d.seq, d.status, d.updated_at, c.slug, c.tier
+       from drafts d left join crests c on c.draft_id = d.id
+      where d.author_id = $1 and d.source = 'gdocs'
+      order by d.updated_at desc limit 30`,
+    [authorId],
+  );
+  return rows;
 }
 
 export async function getDraft(id: string): Promise<DraftRow | null> {
@@ -78,9 +123,11 @@ export async function listDrafts(authorId: string) {
     updated_at: Date;
     slug: string | null;
     tier: Tier | null;
+    source: Source;
+    source_ref: string | null;
   }>(
     `select d.id, d.title, left(d.content, 220) as preview, length(d.content) as length, d.seq, d.status, d.updated_at,
-            c.slug, c.tier
+            c.slug, c.tier, d.source, d.source_ref
        from drafts d left join crests c on c.draft_id = d.id
       where d.author_id = $1
       order by d.updated_at desc
@@ -107,8 +154,6 @@ export async function deleteDraft(id: string, authorId: string) {
 export async function appendBatch(draftId: string, authorId: string, seq: number, events: unknown) {
   if (!Array.isArray(events) || events.length === 0 || events.length > LIMITS.maxEventsPerBatch)
     throw new HttpError(400, "events must be a non-empty array");
-  if (!events.every(isEditEvent)) throw new HttpError(400, "malformed event");
-  const evs = events as EditEvent[];
 
   return tx(async (c) => {
     const { rows } = await c.query<DraftRow>("select * from drafts where id = $1 for update", [draftId]);
@@ -117,12 +162,18 @@ export async function appendBatch(draftId: string, authorId: string, seq: number
     if (d.status !== "open") throw new HttpError(409, "draft is sealed");
     if (seq !== d.seq + 1) throw new HttpError(409, `expected seq ${d.seq + 1}`);
 
-    let next;
-    try {
-      next = applyEvents({ content: d.content, origins: d.origins, lastT: Number(d.last_t) }, evs);
-    } catch (err) {
-      throw new HttpError(422, err instanceof Error ? err.message : "replay failed");
+    let next: { content: string; origins: string; lastT: number };
+    if (d.source === "gdocs") {
+      next = { content: d.content, origins: d.origins, lastT: checkDocsBatch(events, seq, Number(d.last_t)) };
+    } else {
+      if (!events.every(isEditEvent)) throw new HttpError(400, "malformed event");
+      try {
+        next = applyEvents({ content: d.content, origins: d.origins, lastT: Number(d.last_t) }, events as EditEvent[]);
+      } catch (err) {
+        throw new HttpError(422, err instanceof Error ? err.message : "replay failed");
+      }
     }
+    const evs = events;
 
     const prev = await c.query<{ received_ms: string }>(
       "select received_ms from batches where draft_id = $1 order by seq desc limit 1",
@@ -145,6 +196,20 @@ export async function appendBatch(draftId: string, authorId: string, seq: number
     );
     return { seq, headHash: hash, length: next.content.length };
   });
+}
+
+/** Docs batches can't be replayed; check shape, ordering, and that the snapshot opens the chain. Returns the new last_t. */
+function checkDocsBatch(events: unknown[], seq: number, lastT: number): number {
+  if (!events.every(isDocsEvent)) throw new HttpError(400, "malformed event");
+  const evs = events as DocsEvent[];
+  evs.forEach((e, i) => {
+    const isSnapshot = e[1] === "s";
+    if (isSnapshot !== (seq === 1 && i === 0))
+      throw new HttpError(422, seq === 1 && i === 0 ? "recording must start with a snapshot" : "unexpected snapshot");
+    if (e[0] < lastT) throw new HttpError(422, "event time went backwards");
+    lastT = e[0];
+  });
+  return lastT;
 }
 
 // ---------------------------------------------------------------- logs
@@ -179,7 +244,7 @@ export async function loadLog(draftId: string): Promise<CrestLog | null> {
 export async function sealDraft(
   draftId: string,
   authorId: string,
-  opts: { title: string; authorName: string; isPublic: boolean },
+  opts: { title: string; authorName: string; isPublic: boolean; finalText?: string },
 ): Promise<string> {
   const title = opts.title.trim().slice(0, LIMITS.maxTitleLength);
   const authorName = opts.authorName.trim().slice(0, LIMITS.maxNameLength);
@@ -189,46 +254,68 @@ export async function sealDraft(
     const d = rows[0];
     if (!d || d.author_id !== authorId) throw new HttpError(404, "draft not found");
     if (d.status !== "open") throw new HttpError(409, "already sealed");
-    if (!d.content.trim()) throw new HttpError(400, "nothing to seal yet");
 
     const log = await loadLog(draftId);
     if (!log) throw new HttpError(404, "draft not found");
-    const check = await verifyChain(log);
-    if (!check.ok) throw new HttpError(500, `chain failed verification at batch ${check.atSeq}: ${check.reason}`);
-    if (check.doc.content !== d.content || check.head !== d.head_hash)
-      throw new HttpError(500, "replay does not match stored draft");
 
-    const metrics = computeMetrics(log, check.doc);
+    let content: string;
+    let origins: string;
+    let metrics: Metrics;
+    let head: string;
+    let length: number;
+    if (d.source === "gdocs") {
+      content = cleanDocText(opts.finalText ?? "");
+      if (!content.trim()) throw new HttpError(400, "the document is empty");
+      if (content.length > LIMITS.maxContentLength) throw new HttpError(413, "document too long");
+      const check = await verifyDocsLog(log);
+      if (!check.ok) throw new HttpError(422, `chain failed verification at batch ${check.atSeq}: ${check.reason}`);
+      if (check.head !== d.head_hash) throw new HttpError(500, "chain does not match stored draft");
+      ({ metrics, origins } = computeDocsMetrics(log, content));
+      ({ head, length } = check);
+    } else {
+      if (!d.content.trim()) throw new HttpError(400, "nothing to seal yet");
+      const check = await verifyChain(log);
+      if (!check.ok) throw new HttpError(500, `chain failed verification at batch ${check.atSeq}: ${check.reason}`);
+      if (check.doc.content !== d.content || check.head !== d.head_hash)
+        throw new HttpError(500, "replay does not match stored draft");
+      content = check.doc.content;
+      origins = check.doc.origins;
+      metrics = computeMetrics(log, check.doc);
+      ({ head, length } = check);
+    }
+
     const tier = gradeTier(metrics);
-    const contentHash = sha256(check.doc.content);
-    const norm = normalizeForLookup(check.doc.content);
-    const slug = slugFromHead(check.head);
+    const contentHash = sha256(content);
+    const norm = normalizeForLookup(content);
+    const slug = slugFromHead(head);
     const sealedMs = Date.now();
     const signature = await signPayload(
-      signaturePayload({ slug, contentHash, chainHead: check.head, chainLength: check.length, tier, sealedMs }),
+      signaturePayload({ source: d.source, slug, contentHash, chainHead: head, chainLength: length, tier, sealedMs }),
     );
 
     await c.query(
       `insert into crests(slug, draft_id, author_name, title, content, origins, content_hash, lookup_hash, content_norm,
-                          metrics, tier, chain_head, chain_length, signature, is_public, sealed_at)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, to_timestamp($16 / 1000.0))`,
+                          metrics, tier, chain_head, chain_length, signature, is_public, sealed_at, source, source_ref)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, to_timestamp($16 / 1000.0), $17, $18)`,
       [
         slug,
         draftId,
         authorName,
         title,
-        check.doc.content,
-        check.doc.origins,
+        content,
+        origins,
         contentHash,
         sha256(norm),
         norm,
         JSON.stringify(metrics),
         tier,
-        check.head,
-        check.length,
+        head,
+        length,
         signature,
         opts.isPublic,
         sealedMs,
+        d.source,
+        d.source_ref,
       ],
     );
     await c.query("update drafts set status = 'sealed', title = $2, updated_at = now() where id = $1", [draftId, title]);
@@ -254,6 +341,8 @@ export type CrestRow = {
   signature: string;
   is_public: boolean;
   sealed_at: Date;
+  source: Source;
+  source_ref: string | null;
 };
 
 export async function getCrest(slug: string): Promise<CrestRow | null> {

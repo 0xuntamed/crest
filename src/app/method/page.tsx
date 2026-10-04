@@ -88,6 +88,35 @@ export default function MethodPage() {
         </p>
       </section>
 
+      <section id="google-docs" className="mt-20 scroll-mt-24">
+        <div className="label">Google Docs crests</div>
+        <h2 className="display mt-2 max-w-3xl text-[48px]">Same chain, coarser lens</h2>
+        <div className="mt-6 grid gap-8 md:grid-cols-[1.2fr_1fr]">
+          <div className="space-y-4 text-[15.5px] leading-relaxed text-ink-2">
+            <p>
+              Google Docs draws text on a canvas, so the Crest extension can&apos;t see where the cursor is. It records what it
+              can see reliably: every keystroke, paste (with its text), delete, undo, and caret move, plus a snapshot of the
+              document when recording starts. These events go into the same server-witnessed hash chain.
+            </p>
+            <p>
+              When you seal, the extension reads the document&apos;s text. There&apos;s no replay. Instead, every word of the final
+              text is attributed, in this order: exact pasted passages, paragraphs that were already in the snapshot, then word
+              by word, crediting a word as <em>typed</em> only if it appeared in the recorded typing. Anything left over is{" "}
+              <strong className="text-ink">unaccounted</strong> and counts against the typed share.
+            </p>
+          </div>
+          <div className="card p-6 text-[14px] leading-relaxed">
+            <div className="label mb-3">Why this holds up</div>
+            <ul className="space-y-2.5 text-ink-2">
+              <li>✓ Turning the extension off to paste leaves those words unaccounted.</li>
+              <li>✓ Typing junk to pump up keystroke counts doesn&apos;t help: the junk&apos;s words aren&apos;t the essay&apos;s words.</li>
+              <li>✓ Text from collaborators or other devices shows up as unaccounted, not typed.</li>
+              <li className="text-ink-3">✕ Highlighting is per word, not per keystroke, and there&apos;s no replay.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <section className="mt-20 grid gap-8 md:grid-cols-2">
         <div className="card p-7">
           <div className="label">What a crest proves</div>

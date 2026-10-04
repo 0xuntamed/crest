@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Harness essay - Google Docs</title>
+    <style>
+      body { margin: 0; background: #f0f3f8; font-family: Arial, sans-serif; }
+      .bar { height: 56px; background: #fff; border-bottom: 1px solid #dadce0; display: flex; align-items: center; padding: 0 16px; gap: 10px; }
+      .bar b { color: #1a73e8; }
+      .kix-appview-editor { display: flex; justify-content: center; padding: 24px; }
+      .kix-page { width: 680px; min-height: 70vh; background: #fff; box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3); }
+      /* In real Docs this iframe is hidden and the canvas shows the text; here it doubles as the page. */
+      iframe.docs-texteventtarget-iframe { width: 100%; height: 70vh; border: 0; display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="bar"><b>Docs</b> harness · <span>Harness essay</span></div>
+    <div class="kix-appview-editor">
+      <div class="kix-page">
+        <iframe
+          class="docs-texteventtarget-iframe"
+          srcdoc="<body style='margin:0;padding:48px 56px;font:16px/1.6 Georgia,serif'><div contenteditable='true' id='ed' style='outline:none;min-height:60vh;white-space:pre-wrap'></div></body>"
+        ></iframe>
+      </div>
+    </div>
+    <script src="/shim.js"></script>
+    <script>
+      // Load the real content script only after the editor iframe exists, like Docs at document_idle.
+      window.addEventListener("load", () => {
+        const s = document.createElement("script");
+        s.src = "/ext/content.js";
+        document.body.appendChild(s);
+      });
+    </script>
+  </body>
+</html>

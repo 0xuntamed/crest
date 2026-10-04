@@ -13,7 +13,11 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/crests/[slu
     return Response.json(
       {
         ...log,
+        source: crest.source,
+        // Docs crests have no replay, so the verifier needs the sealed text to recompute attribution.
+        ...(crest.source === "gdocs" ? { content: crest.content } : {}),
         seal: {
+          source: crest.source,
           slug: crest.slug,
           contentHash: crest.content_hash,
           chainHead: crest.chain_head,

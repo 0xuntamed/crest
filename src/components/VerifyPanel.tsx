@@ -10,11 +10,15 @@ import {
   slugFromHead,
   verifyChain,
   type CrestLog,
+  type DocState,
+  type Source,
   type Tier,
 } from "@/lib/core";
+import { computeDocsMetrics, verifyDocsLog } from "@/lib/docs";
 import { fetchLog } from "./CrestReader";
 
 type SealInfo = {
+  source?: Source;
   slug: string;
   contentHash: string;
   chainHead: string;
@@ -33,11 +37,19 @@ const STEPS = [
   "Re-grade with the published rules",
   "Check the server's Ed25519 signature",
 ];
+const DOCS_STEPS = [
+  "Download the raw keystroke log",
+  "Re-hash every batch in the chain",
+  "Match the sealed text to its hash",
+  "Re-attribute every word and re-grade",
+  "Check the server's Ed25519 signature",
+];
 
 const b64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
-export function VerifyPanel({ slug }: { slug: string }) {
-  const [steps, setSteps] = useState<Step[]>(STEPS.map((label) => ({ label, status: "wait" })));
+export function VerifyPanel({ slug, source = "crest" }: { slug: string; source?: Source }) {
+  const labels = source === "gdocs" ? DOCS_STEPS : STEPS;
+  const [steps, setSteps] = useState<Step[]>(labels.map((label) => ({ label, status: "wait" })));
   const [running, setRunning] = useState(false);
   const [verdict, setVerdict] = useState<null | boolean>(null);
 
@@ -48,11 +60,12 @@ export function VerifyPanel({ slug }: { slug: string }) {
   async function run() {
     setRunning(true);
     setVerdict(null);
-    setSteps(STEPS.map((label) => ({ label, status: "wait" })));
+    setSteps(labels.map((label) => ({ label, status: "wait" })));
     let i = 0;
     try {
       set(i, "run");
-      const log = (await fetchLog(slug)) as CrestLog & { seal: SealInfo };
+      const log = (await fetchLog(slug)) as CrestLog & { seal: SealInfo; source?: Source; content?: string };
+      const docs = log.source === "gdocs";
       const seal = log.seal;
       const bytes = log.batches.reduce((n, b) => n + b.eventsJson.length, 0);
       await pause();
@@ -60,23 +73,28 @@ export function VerifyPanel({ slug }: { slug: string }) {
 
       i = 1;
       set(i, "run");
-      const check = await verifyChain(log);
+      let replayed: DocState | null = null;
+      const check = docs ? await verifyDocsLog(log) : await verifyChain(log);
       await pause();
       if (!check.ok) throw new Error(`batch ${check.atSeq}: ${check.reason}`);
+      if ("doc" in check) replayed = check.doc as DocState;
       if (check.head !== seal.chainHead || check.length !== seal.chainLength || slugFromHead(check.head) !== seal.slug)
         throw new Error("chain head doesn't match the seal");
       set(i, "ok", `head ${check.head.slice(0, 16)}…`);
 
       i = 2;
       set(i, "run");
-      const contentHash = await sha256Hex(check.doc.content);
+      const text = docs ? (log.content ?? "") : (replayed?.content ?? "");
+      const contentHash = await sha256Hex(text);
       await pause();
-      if (contentHash !== seal.contentHash) throw new Error("replayed text differs from sealed text");
+      if (contentHash !== seal.contentHash) throw new Error(docs ? "sealed text doesn't match its hash" : "replayed text differs from sealed text");
       set(i, "ok", `sha256 ${contentHash.slice(0, 16)}…`);
 
       i = 3;
       set(i, "run");
-      const tier = gradeTier(computeMetrics(log, check.doc));
+      const tier = gradeTier(
+        docs || !replayed ? computeDocsMetrics(log, text).metrics : computeMetrics(log, replayed),
+      );
       await pause();
       if (tier !== seal.tier) throw new Error(`re-graded as ${tier}, sealed as ${seal.tier}`);
       set(i, "ok", `${TIER_INFO[tier].label}, same as sealed`);
@@ -93,6 +111,7 @@ export function VerifyPanel({ slug }: { slug: string }) {
           b64(seal.signature),
           new TextEncoder().encode(
             signaturePayload({
+              source: seal.source,
               slug: seal.slug,
               contentHash: seal.contentHash,
               chainHead: seal.chainHead,

@@ -80,7 +80,10 @@ export function slugFromHead(chainHead: string): string {
   return chainHead.slice(0, 12);
 }
 
+export type Source = "crest" | "gdocs";
+
 export function signaturePayload(p: {
+  source?: Source;
   slug: string;
   contentHash: string;
   chainHead: string;
@@ -88,7 +91,8 @@ export function signaturePayload(p: {
   tier: Tier;
   sealedMs: number;
 }): string {
-  return `crest/v1/seal\n${p.slug}\n${p.contentHash}\n${p.chainHead}\n${p.chainLength}\n${p.tier}\n${p.sealedMs}`;
+  const tag = p.source === "gdocs" ? "crest/v1/seal-gdocs" : "crest/v1/seal";
+  return `${tag}\n${p.slug}\n${p.contentHash}\n${p.chainHead}\n${p.chainLength}\n${p.tier}\n${p.sealedMs}`;
 }
 
 /** Loose normalization used for "does this text have a crest?" lookups. */
@@ -153,26 +157,37 @@ export type ChainCheck =
   | { ok: true; head: string; length: number; doc: DocState }
   | { ok: false; atSeq: number; reason: string };
 
-/** Recomputes every hash in the log and replays it. Same function powers sealing and the in-browser verifier. */
-export async function verifyChain(log: CrestLog): Promise<ChainCheck> {
+export type LinkCheck = { ok: true; head: string; length: number } | { ok: false; atSeq: number; reason: string };
+
+/** Recomputes the genesis hash and every batch hash. Says nothing about what the events mean. */
+export async function verifyLinks(log: CrestLog): Promise<LinkCheck> {
   const genesis = await sha256Hex(genesisInput(log.draftId, log.createdMs));
   if (genesis !== log.genesis) return { ok: false, atSeq: 0, reason: "genesis hash mismatch" };
   let prev = genesis;
-  let doc = EMPTY_DOC;
   for (let i = 0; i < log.batches.length; i++) {
     const b = log.batches[i];
     if (b.seq !== i + 1) return { ok: false, atSeq: b.seq, reason: "sequence gap" };
     if (b.prevHash !== prev) return { ok: false, atSeq: b.seq, reason: "broken link to previous batch" };
     const h = await sha256Hex(batchInput(prev, b.seq, b.receivedMs, b.eventsJson));
     if (h !== b.hash) return { ok: false, atSeq: b.seq, reason: "batch hash mismatch" };
+    prev = h;
+  }
+  return { ok: true, head: prev, length: log.batches.length };
+}
+
+/** Verifies every link, then replays the edits. Same function powers sealing and the in-browser verifier. */
+export async function verifyChain(log: CrestLog): Promise<ChainCheck> {
+  const links = await verifyLinks(log);
+  if (!links.ok) return links;
+  let doc = EMPTY_DOC;
+  for (const b of log.batches) {
     try {
       doc = applyEvents(doc, JSON.parse(b.eventsJson) as EditEvent[]);
     } catch (err) {
       return { ok: false, atSeq: b.seq, reason: err instanceof Error ? err.message : "replay failed" };
     }
-    prev = h;
   }
-  return { ok: true, head: prev, length: log.batches.length, doc };
+  return { ok: true, head: links.head, length: links.length, doc };
 }
 
 // ---------------------------------------------------------------- metrics
@@ -201,6 +216,8 @@ export type Metrics = {
   rhythm: number[];
   /** Document length sampled at 64 evenly spaced points of writing activity. */
   growth: number[];
+  /** Present on crests written in Google Docs. */
+  docs?: { snapshotChars: number; baselineShare: number; unaccountedShare: number };
 };
 
 export const RHYTHM_BUCKETS = [100, 200, 400, 800, 1600, 3200];
@@ -210,9 +227,31 @@ export function countWords(text: string): number {
   return m ? m.length : 0;
 }
 
-const round = (n: number, d = 4) => Math.round(n * 10 ** d) / 10 ** d;
+export const round = (n: number, d = 4) => Math.round(n * 10 ** d) / 10 ** d;
 
-export function computeMetrics(log: CrestLog, doc: DocState): Metrics {
+/** One unit of writing activity, independent of where it was captured. */
+export type Step = { t: number; ins: number; del: number; kind: Origin; setLen?: number };
+
+type Activity = Pick<
+  Metrics,
+  | "inserted"
+  | "deleted"
+  | "pasteEvents"
+  | "largestPaste"
+  | "events"
+  | "batches"
+  | "activeMs"
+  | "spanMs"
+  | "sessions"
+  | "pauses"
+  | "wpm"
+  | "witnessedShare"
+  | "rhythm"
+  | "growth"
+>;
+
+/** Timing, witnessing, rhythm and growth: the same rules for every source. */
+export function accumulate(log: CrestLog, stepsOf: (eventsJson: string) => Step[]): Activity {
   const inserted = { t: 0, p: 0, o: 0 };
   let deleted = 0;
   let pasteEvents = 0;
@@ -234,17 +273,17 @@ export function computeMetrics(log: CrestLog, doc: DocState): Metrics {
   let prevBatchLastT = 0;
 
   for (const b of log.batches) {
-    const evs = JSON.parse(b.eventsJson) as EditEvent[];
-    if (evs.length === 0) continue;
-    const batchFirstT = evs[0][0];
-    const batchLastT = evs[evs.length - 1][0];
+    const steps = stepsOf(b.eventsJson);
+    if (steps.length === 0) continue;
+    const batchFirstT = steps[0].t;
+    const batchLastT = steps[steps.length - 1].t;
     const clientElapsed = batchLastT - (prevBatchLastT || batchFirstT);
     const serverElapsed = b.receivedMs - prevReceived;
     const witnessed = clientElapsed <= serverElapsed + RULES.witnessToleranceMs;
     prevReceived = b.receivedMs;
     prevBatchLastT = batchLastT;
 
-    for (const [t, , del, ins, kind] of evs) {
+    for (const { t, ins, del, kind, setLen } of steps) {
       events++;
       if (!firstT) {
         firstT = t;
@@ -258,13 +297,13 @@ export function computeMetrics(log: CrestLog, doc: DocState): Metrics {
       prevT = t;
 
       deleted += del;
-      if (ins.length) {
-        inserted[kind] += ins.length;
-        totalChars += ins.length;
-        if (witnessed) witnessedChars += ins.length;
+      if (ins) {
+        inserted[kind] += ins;
+        totalChars += ins;
+        if (witnessed) witnessedChars += ins;
         if (kind === "p") {
           pasteEvents++;
-          largestPaste = Math.max(largestPaste, ins.length);
+          largestPaste = Math.max(largestPaste, ins);
         }
         if (kind === "t") {
           if (prevTypedT) {
@@ -276,7 +315,7 @@ export function computeMetrics(log: CrestLog, doc: DocState): Metrics {
           prevTypedT = t;
         }
       }
-      len += ins.length - del;
+      len = setLen ?? Math.max(0, len + ins - del);
       lengthsByActive.push([activeMs, len]);
     }
   }
@@ -293,25 +332,7 @@ export function computeMetrics(log: CrestLog, doc: DocState): Metrics {
     growth[samples - 1] = len;
   }
 
-  let ct = 0,
-    cp = 0,
-    co = 0;
-  for (let i = 0; i < doc.origins.length; i++) {
-    const c = doc.origins.charCodeAt(i);
-    if (c === 116) ct++;
-    else if (c === 112) cp++;
-    else co++;
-  }
-  const chars = doc.content.length;
-  const denom = Math.max(1, chars);
-
   return {
-    version: 1,
-    chars,
-    words: countWords(doc.content),
-    typedShare: round(ct / denom),
-    pastedShare: round(cp / denom),
-    otherShare: round(co / denom),
     inserted,
     deleted,
     pasteEvents,
@@ -324,9 +345,43 @@ export function computeMetrics(log: CrestLog, doc: DocState): Metrics {
     pauses,
     wpm: activeMs > 0 ? round(inserted.t / 5 / (activeMs / 60_000), 1) : 0,
     witnessedShare: totalChars ? round(witnessedChars / totalChars) : 1,
-    revisionRatio: round(deleted / denom, 3),
     rhythm,
     growth,
+  };
+}
+
+/** Share of the final text by origin. Anything that isn't t or p counts as other. */
+export function sharesOf(content: string, origins: string) {
+  let ct = 0,
+    cp = 0,
+    co = 0;
+  for (let i = 0; i < origins.length; i++) {
+    const c = origins.charCodeAt(i);
+    if (c === 116) ct++;
+    else if (c === 112) cp++;
+    else co++;
+  }
+  const denom = Math.max(1, content.length);
+  return {
+    chars: content.length,
+    words: countWords(content),
+    typedShare: round(ct / denom),
+    pastedShare: round(cp / denom),
+    otherShare: round(co / denom),
+  };
+}
+
+const editSteps = (eventsJson: string): Step[] =>
+  (JSON.parse(eventsJson) as EditEvent[]).map(([t, , del, ins, kind]) => ({ t, ins: ins.length, del, kind }));
+
+export function computeMetrics(log: CrestLog, doc: DocState): Metrics {
+  const shares = sharesOf(doc.content, doc.origins);
+  const activity = accumulate(log, editSteps);
+  return {
+    version: 1,
+    ...shares,
+    ...activity,
+    revisionRatio: round(activity.deleted / Math.max(1, shares.chars), 3),
   };
 }
 

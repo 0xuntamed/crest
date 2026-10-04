@@ -90,7 +90,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
               <div style={{ width: `${m.otherShare * 100}%`, background: C.other }} />
             </div>
             <div style={{ fontFamily: "Mono", fontSize: 16, color: C.ink3, letterSpacing: 1 }}>
-              {`SIGNED · ${crest.chain_length} BATCHES WITNESSED · ${crest.chain_head.slice(0, 24)}…`}
+              {`SIGNED · ${crest.chain_length} BATCHES WITNESSED${crest.source === "gdocs" ? " · VIA GOOGLE DOCS" : ""} · ${crest.chain_head.slice(0, crest.source === "gdocs" ? 12 : 24)}…`}
             </div>
           </div>
         </div>

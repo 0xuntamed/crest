@@ -12,7 +12,9 @@
     "keygen": "node scripts/keygen.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --no-warnings --test \"tests/**/*.test.ts\"",
-    "test:e2e": "node --experimental-strip-types --no-warnings tests/e2e.ts"
+    "test:e2e": "node --experimental-strip-types --no-warnings tests/e2e.ts",
+    "ext:harness": "node tests/ext-harness/server.mjs",
+    "test:e2e:ext": "node --experimental-strip-types --no-warnings tests/e2e-ext.ts"
   },
   "dependencies": {
     "next": "16.3.8",

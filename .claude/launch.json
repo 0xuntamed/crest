@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "crest", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3000 }
+    { "name": "crest", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3000 },
+    { "name": "docs-harness", "runtimeExecutable": "node", "runtimeArgs": ["tests/ext-harness/server.mjs"], "port": 4100 }
   ]
 }
