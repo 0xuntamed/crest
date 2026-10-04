@@ -1,26 +1,267 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --paper: #f4f0e8;
+  --paper-2: #ebe5d8;
+  --card: #fbf9f4;
+  --ink: #17140f;
+  --ink-2: #4b453b;
+  --ink-3: #8a8274;
+  --rule: #dad2c2;
+  --wax: #c8371e;
+  --wax-2: #a42a14;
+  --typed: #2f6b4f;
+  --paste: #e3a33a;
+  --paste-bg: #f6dfa9;
+  --other-bg: #d9e2f2;
+  --grain-opacity: 0.07;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --paper: #13110e;
+    --paper-2: #1c1a16;
+    --card: #191713;
+    --ink: #efe9dd;
+    --ink-2: #bdb4a4;
+    --ink-3: #7d7668;
+    --rule: #2e2a24;
+    --wax: #ee5638;
+    --wax-2: #ff7a5c;
+    --typed: #7cc19c;
+    --paste: #f0b553;
+    --paste-bg: rgba(240, 181, 83, 0.24);
+    --other-bg: rgba(120, 150, 210, 0.22);
+    --grain-opacity: 0.05;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --paper: #13110e;
+  --paper-2: #1c1a16;
+  --card: #191713;
+  --ink: #efe9dd;
+  --ink-2: #bdb4a4;
+  --ink-3: #7d7668;
+  --rule: #2e2a24;
+  --wax: #ee5638;
+  --wax-2: #ff7a5c;
+  --typed: #7cc19c;
+  --paste: #f0b553;
+  --paste-bg: rgba(240, 181, 83, 0.24);
+  --other-bg: rgba(120, 150, 210, 0.22);
+  --grain-opacity: 0.05;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-wax: var(--wax);
+  --color-wax-2: var(--wax-2);
+  --color-typed: var(--typed);
+  --color-paste: var(--paste);
+  --color-paste-bg: var(--paste-bg);
+  --color-other-bg: var(--other-bg);
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-instrument);
+  --font-read: var(--font-newsreader);
+  --animate-spin-slow: spin 60s linear infinite;
+}
+
+html {
+  background: var(--paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* film grain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  pointer-events: none;
+  z-index: 60;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+::selection {
+  background: var(--wax);
+  color: #fff;
+}
+
+.label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.display {
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+.hairline {
+  border-color: var(--rule);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.7rem 1.2rem;
+  font-size: 14px;
+  font-weight: 550;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+.btn-wax {
+  background: var(--wax);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.25),
+    0 6px 20px -8px var(--wax);
+}
+.btn-wax:hover {
+  background: var(--wax-2);
+}
+.btn-ghost {
+  border: 1px solid var(--rule);
+  color: var(--ink);
+}
+.btn-ghost:hover {
+  background: var(--paper-2);
+}
+.btn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+}
+
+.seal svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 10px 18px rgb(80 20 5 / 0.18));
+}
+
+/* origin highlighting */
+.o-p {
+  background: var(--paste-bg);
+  box-shadow: 0 1px 0 var(--paste);
+  border-radius: 2px;
+}
+.o-o {
+  background: var(--other-bg);
+  border-radius: 2px;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin: 0 -1px;
+  vertical-align: -0.15em;
+  background: var(--wax);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.96) rotate(2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+.stamp {
+  animation: stamp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+textarea.writer {
+  font-family: var(--font-newsreader), ui-serif, Georgia, serif;
+  font-size: 21px;
+  line-height: 1.65;
+  caret-color: var(--wax);
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+}
+textarea.writer::placeholder {
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+.prose-read {
+  font-family: var(--font-newsreader), ui-serif, Georgia, serif;
+  font-size: 20px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

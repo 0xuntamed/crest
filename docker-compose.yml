@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: crest
+      POSTGRES_PASSWORD: crest
+      POSTGRES_DB: crest
+    ports:
+      - "5433:5432"
+    volumes:
+      - crest-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crest -d crest"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  crest-pg:
