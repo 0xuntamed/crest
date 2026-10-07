@@ -10,13 +10,18 @@ try {
   process.loadEnvFile?.(".env");
 } catch {}
 
-const url = process.env.DATABASE_URL;
+// Same names the app accepts (src/lib/db.ts).
+const URL_VARS = ["DATABASE_URL", "POSTGRES_URL", "DATABASE_URL_UNPOOLED", "POSTGRES_URL_NON_POOLING"];
+const url = URL_VARS.map((name) => process.env[name]).find(Boolean);
 if (!url) {
-  console.error("DATABASE_URL is not set");
+  console.error(`No database configured: set DATABASE_URL (also accepted: ${URL_VARS.slice(1).join(", ")}).`);
   process.exit(1);
 }
 
-const client = new pg.Client({ connectionString: url });
+const client = new pg.Client({
+  connectionString: url,
+  ssl: process.env.PGSSL === "require" ? { rejectUnauthorized: false } : undefined,
+});
 await client.connect();
 await client.query(`create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())`);
 
