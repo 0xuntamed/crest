@@ -13,7 +13,7 @@
   <img alt="PostgreSQL 17" src="https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white">
   <img alt="Chrome MV3" src="https://img.shields.io/badge/Chrome%20extension-MV3-4285f4?logo=googlechrome&logoColor=white">
-  <img alt="Ed25519" src="https://img.shields.io/badge/signatures-Ed25519-c8371e">
+  <img alt="Ed25519" src="https://img.shields.io/badge/signatures-Ed25519-00b1fa">
 </p>
 
 ---
