@@ -48,7 +48,7 @@ export default function MethodPage() {
     <div className="mx-auto max-w-5xl px-4 pt-14 sm:px-6 sm:pt-20">
       <div className="label">Method · v1</div>
       <h1 className="display mt-3 max-w-3xl text-[56px] sm:text-[88px]">
-        Fixed rules. <em className="text-wax">No oracle.</em>
+        Fixed rules. <em className="text-wax-text">No oracle.</em>
       </h1>
       <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-ink-2">
         AI detectors guess, and they wrongly accuse real people. Crest doesn&apos;t look at your prose at all. It records how
@@ -58,7 +58,7 @@ export default function MethodPage() {
       <ol className="mt-16 border-t hairline">
         {STEPS.map((s) => (
           <li key={s.n} className="grid gap-4 border-b hairline py-8 md:grid-cols-[120px_1fr_1.4fr]">
-            <span className="font-mono text-[13px] text-wax">{s.n}</span>
+            <span className="font-mono text-[13px] text-wax-text">{s.n}</span>
             <h2 className="display text-[32px]">{s.h}</h2>
             <p className="text-[15.5px] leading-relaxed text-ink-2">{s.p}</p>
           </li>

@@ -27,7 +27,7 @@ export default async function Home() {
               <span className="inline-block h-px w-8 bg-wax" /> Proof of human authorship
             </div>
             <h1 className="display mt-5 text-[64px] sm:text-[96px] lg:text-[112px]">
-              Prove a human <em className="text-wax">wrote&nbsp;it.</em>
+              Prove a human <em className="text-wax-text">wrote&nbsp;it.</em>
             </h1>
             <p className="mt-6 max-w-lg text-[18px] leading-relaxed text-ink-2">
               Write in Crest and every keystroke joins a hash-chained, server-witnessed log. Seal it to get a signed
@@ -81,7 +81,7 @@ export default async function Home() {
         <h2 className="display mt-3 max-w-2xl text-[48px] sm:text-[64px]">Write. Witness. Seal.</h2>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           <article className="card flex flex-col p-7">
-            <span className="font-mono text-[12px] text-wax">01 / write</span>
+            <span className="font-mono text-[12px] text-wax-text">01 / write</span>
             <h3 className="display mt-3 text-[34px]">A calm place to write</h3>
             <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
               A distraction-free editor in a reading serif. Behind it, every insert, delete, paste and undo becomes an event.
@@ -94,7 +94,7 @@ export default async function Home() {
             </div>
           </article>
           <article className="card flex flex-col p-7">
-            <span className="font-mono text-[12px] text-wax">02 / witness</span>
+            <span className="font-mono text-[12px] text-wax-text">02 / witness</span>
             <h3 className="display mt-3 text-[34px]">A chain the server signs off</h3>
             <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
               Every second, a batch is replayed, timestamped and hashed onto the last. Time claimed by the client has to
@@ -110,7 +110,7 @@ export default async function Home() {
             </div>
           </article>
           <article className="card flex flex-col p-7">
-            <span className="font-mono text-[12px] text-wax">03 / seal</span>
+            <span className="font-mono text-[12px] text-wax-text">03 / seal</span>
             <h3 className="display mt-3 text-[34px]">A seal nobody can forge</h3>
             <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
               The server replays everything, grades it with fixed public rules, and signs it. Each seal&apos;s artwork is
@@ -159,7 +159,7 @@ export default async function Home() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="label">{TIER_INFO[c.tier].label}</div>
-                    <h3 className="display mt-1 line-clamp-2 text-[30px] group-hover:text-wax">{c.title || "Untitled"}</h3>
+                    <h3 className="display mt-1 line-clamp-2 text-[30px] group-hover:text-wax-text">{c.title || "Untitled"}</h3>
                   </div>
                   <Seal hash={c.chain_head} tier={c.tier} size={56} ring={false} className="shrink-0 transition-transform duration-700 group-hover:rotate-45" />
                 </div>

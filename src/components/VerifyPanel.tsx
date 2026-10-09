@@ -154,7 +154,7 @@ export function VerifyPanel({ slug, source = "crest" }: { slug: string; source?:
           </span>
         )}
         {verdict === false && (
-          <span className="stamp shrink-0 rounded-full border-2 border-wax px-3 py-1 font-mono text-[12px] font-semibold uppercase tracking-wider text-wax">
+          <span className="stamp shrink-0 rounded-full border-2 border-wax px-3 py-1 font-mono text-[12px] font-semibold uppercase tracking-wider text-wax-text">
             Failed
           </span>
         )}
@@ -166,7 +166,7 @@ export function VerifyPanel({ slug, source = "crest" }: { slug: string; source?:
             <div className="min-w-0">
               <div className={s.status === "wait" ? "text-ink-3" : "text-ink"}>{s.label}</div>
               {s.detail && (
-                <div className={`truncate font-mono text-[11.5px] ${s.status === "fail" ? "text-wax" : "text-ink-3"}`}>{s.detail}</div>
+                <div className={`truncate font-mono text-[11.5px] ${s.status === "fail" ? "text-wax-text" : "text-ink-3"}`}>{s.detail}</div>
               )}
             </div>
           </li>
@@ -187,7 +187,7 @@ function StepIcon({ status }: { status: Step["status"] }) {
       </span>
     );
   if (status === "fail")
-    return <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-wax text-[11px] font-bold text-white">!</span>;
+    return <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-wax text-[11px] font-bold text-wax-ink">!</span>;
   if (status === "run")
     return <span className="mt-0.5 size-5 shrink-0 animate-spin rounded-full border-2 border-rule border-t-wax" />;
   return <span className="mt-0.5 size-5 shrink-0 rounded-full border border-rule" />;

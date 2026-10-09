@@ -70,7 +70,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
                 style={{
                   display: "flex",
                   background: tierColor.wax,
-                  color: "#fff",
+                  color: tierColor.text,
                   fontFamily: "Mono",
                   fontSize: 20,
                   letterSpacing: 2,

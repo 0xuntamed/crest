@@ -24,7 +24,7 @@ export function OriginBar({
         <>
           <div className="bg-typed transition-[width] duration-500" style={{ width: `${typed * 100}%` }} />
           <div className="bg-paste transition-[width] duration-500" style={{ width: `${pasted * 100}%` }} />
-          <div className="bg-[#7d96cc] transition-[width] duration-500" style={{ width: `${Math.max(0, other - unaccounted) * 100}%` }} />
+          <div className="bg-other transition-[width] duration-500" style={{ width: `${Math.max(0, other - unaccounted) * 100}%` }} />
           <div className="o-u-bar transition-[width] duration-500" style={{ width: `${unaccounted * 100}%` }} />
         </>
       )}

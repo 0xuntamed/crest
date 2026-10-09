@@ -305,7 +305,7 @@
   document.documentElement.appendChild(host);
 
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const SEAL = `<svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 1.5l2.6 2.2 3.4-.5 1.4 3.1 3.1 1.4-.5 3.4 2.2 2.6-2.2 2.6.5 3.4-3.1 1.4-1.4 3.1-3.4-.5L16 30.5l-2.6-2.2-3.4.5-1.4-3.1-3.1-1.4.5-3.4L3.8 16 6 13.4l-.5-3.4 3.1-1.4L10 5.5l3.4.5z" fill="#e0472b"/><path d="M20.4 11.4a6 6 0 1 0 0 9.2" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+  const SEAL = `<svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 1.5l2.6 2.2 3.4-.5 1.4 3.1 3.1 1.4-.5 3.4 2.2 2.6-2.2 2.6.5 3.4-3.1 1.4-1.4 3.1-3.4-.5L16 30.5l-2.6-2.2-3.4.5-1.4-3.1-3.1-1.4.5-3.4L3.8 16 6 13.4l-.5-3.4 3.1-1.4L10 5.5l3.4.5z" fill="#00b1fa"/><path d="M20.4 11.4a6 6 0 1 0 0 9.2" fill="none" stroke="#17140f" stroke-width="2.6" stroke-linecap="round"/></svg>`;
 
   const STYLE = `
     :host { all: initial; }
@@ -317,15 +317,15 @@
     button { all: unset; cursor: pointer; border-radius: 999px; font-size: 13px; font-weight: 600; line-height: 1; }
     .start { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: #f4f0e8; }
     .start:hover { background: rgba(255,255,255,.08); }
-    .dot { width: 8px; height: 8px; border-radius: 8px; background: #e0472b; box-shadow: 0 0 0 0 rgba(224,71,43,.6); animation: pulse 1.6s infinite; }
-    .dot.off { background: #e3a33a; animation: none; }
-    @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(224,71,43,0); } 100% { box-shadow: 0 0 0 0 rgba(224,71,43,0); } }
+    .dot { width: 8px; height: 8px; border-radius: 8px; background: #00b1fa; box-shadow: 0 0 0 0 rgba(0,177,250,.6); animation: pulse 1.6s infinite; }
+    .dot.off { background: #8a8274; animation: none; }
+    @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(0,177,250,0); } 100% { box-shadow: 0 0 0 0 rgba(0,177,250,0); } }
     .stats { font: 500 11.5px ui-monospace, "Geist Mono", monospace; color: #bdb4a4; white-space: nowrap; }
-    .seal { background: #e0472b; color: #fff; padding: 8px 14px; }
-    .seal:hover { background: #ff6b4d; }
+    .seal { background: #00b1fa; color: #17140f; padding: 8px 14px; }
+    .seal:hover { background: #00bcff; }
     .x { color: #8a8274; padding: 8px 10px; font-weight: 500; }
     .x:hover { color: #f4f0e8; }
-    .x.armed { background: #e0472b; color: #fff; }
+    .x.armed { background: #00b1fa; color: #17140f; }
     .card { width: 300px; background: #fbf9f4; color: #17140f; border: 1px solid #dad2c2; border-radius: 18px; padding: 16px;
             box-shadow: 0 24px 60px -24px rgba(40,20,5,.45); }
     .label { font: 500 10.5px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: #8a8274; }
@@ -337,11 +337,11 @@
     .row button { flex: 1; text-align: center; padding: 10px; }
     .ghost { border: 1px solid #dad2c2; color: #17140f; }
     .ghost:hover { background: #ebe5d8; }
-    .primary { background: #c8371e; color: #fff; }
-    .primary:hover { background: #a42a14; }
+    .primary { background: #00b1fa; color: #17140f; }
+    .primary:hover { background: #00a6f4; }
     .check { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; margin-bottom: 10px; color: #4b453b; }
     .link { display: block; margin: 8px 0 12px; padding: 8px 10px; border-radius: 10px; background: #ebe5d8; font: 500 11.5px ui-monospace, monospace; color: #17140f; word-break: break-all; }
-    .msg { max-width: 300px; background: #17140f; color: #f6dfa9; font-size: 12px; line-height: 1.45; padding: 8px 12px; border-radius: 12px; }
+    .msg { max-width: 300px; background: #17140f; color: #b8e6fe; font-size: 12px; line-height: 1.45; padding: 8px 12px; border-radius: 12px; }
   `;
 
   function render() {

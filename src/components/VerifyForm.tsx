@@ -57,7 +57,7 @@ export function VerifyForm() {
         </div>
       </form>
 
-      {err && <p className="mt-4 text-wax">{err}</p>}
+      {err && <p className="mt-4 text-wax-text">{err}</p>}
 
       {res && (
         <div className="rise mt-8">
@@ -85,7 +85,7 @@ export function VerifyForm() {
                           {c.author_name || "Anonymous"} · sealed {new Date(c.sealed_at).toLocaleDateString()}
                         </div>
                       </div>
-                      <span className="shrink-0 rounded-full bg-wax px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-white">
+                      <span className="shrink-0 rounded-full bg-wax px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-wax-ink">
                         {TIER_INFO[c.tier].label}
                       </span>
                     </Link>

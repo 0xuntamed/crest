@@ -42,9 +42,9 @@ export default async function DraftsPage() {
               <li key={d.id} className="group flex items-start gap-4 py-5">
                 <Link href={href} className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="display truncate text-[28px] group-hover:text-wax">{d.title || "Untitled"}</h2>
+                    <h2 className="display truncate text-[28px] group-hover:text-wax-text">{d.title || "Untitled"}</h2>
                     {d.status === "sealed" && d.tier ? (
-                      <span className="rounded-full bg-wax/10 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-wax">
+                      <span className="rounded-full bg-wax/10 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-wax-text">
                         sealed · {TIER_INFO[d.tier].label}
                       </span>
                     ) : (

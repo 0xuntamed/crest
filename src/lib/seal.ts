@@ -1,11 +1,12 @@
 // Deterministic wax-seal artwork derived from a hex hash. Same hash -> same seal, everywhere.
 import type { Tier } from "./core";
 
-export const TIER_COLORS: Record<Tier, { wax: string; deep: string; hi: string }> = {
-  handwritten: { wax: "#C8371E", deep: "#7E1C0C", hi: "#F07A5C" },
-  "human-led": { wax: "#2D4F93", deep: "#152B5C", hi: "#7097E0" },
-  assisted: { wax: "#5A7438", deep: "#2E4019", hi: "#9DBA70" },
-  assembled: { wax: "#5E5A52", deep: "#2F2C27", hi: "#A39D92" },
+/** wax/deep/hi paint the seal; text is the readable label color on a wax-colored pill. */
+export const TIER_COLORS: Record<Tier, { wax: string; deep: string; hi: string; text: string }> = {
+  handwritten: { wax: "#00B1FA", deep: "#00598A", hi: "#74D4FF", text: "#17140F" }, // sky-450 / sky-800 / sky-300
+  "human-led": { wax: "#2D4F93", deep: "#152B5C", hi: "#7097E0", text: "#FFFFFF" },
+  assisted: { wax: "#5A7438", deep: "#2E4019", hi: "#9DBA70", text: "#FFFFFF" },
+  assembled: { wax: "#5E5A52", deep: "#2F2C27", hi: "#A39D92", text: "#FFFFFF" },
 };
 
 const TIER_WORD: Record<Tier, string> = {

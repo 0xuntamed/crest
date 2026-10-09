@@ -288,7 +288,7 @@ export function Editor({ draftId, initial }: Props) {
             <dl className="mt-3 grid grid-cols-3 gap-2 text-[12px]">
               <Stat label="typed" value={stats.empty ? "—" : pct(stats.typed, 0)} dot="bg-typed" />
               <Stat label="pasted" value={stats.empty ? "—" : pct(stats.pasted, 0)} dot="bg-paste" />
-              <Stat label="other" value={stats.empty ? "—" : pct(stats.other, 0)} dot="bg-[#7d96cc]" />
+              <Stat label="other" value={stats.empty ? "—" : pct(stats.other, 0)} dot="bg-other" />
             </dl>
           </div>
 
@@ -501,7 +501,7 @@ function SealDialog({
             </span>
             <input type="checkbox" checked={isPublic} onChange={(e) => setPublic(e.target.checked)} className="size-5 accent-[var(--wax)]" />
           </label>
-          {err && <p className="text-[13px] text-wax">{err}</p>}
+          {err && <p className="text-[13px] text-wax-text">{err}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" className="btn btn-ghost flex-1 justify-center" onClick={onClose} disabled={busy}>
               Keep writing

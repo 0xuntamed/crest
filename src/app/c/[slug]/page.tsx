@@ -81,8 +81,8 @@ export default async function CrestPage(props: PageProps<"/c/[slug]">) {
           )}
           <div className="mt-6 inline-flex items-center gap-3 rounded-full border hairline bg-card py-1.5 pl-1.5 pr-4">
             <span
-              className="shrink-0 whitespace-nowrap rounded-full px-3 py-1 font-mono text-[12px] font-semibold uppercase tracking-wider text-white"
-              style={{ background: TIER_COLORS[c.tier].wax }}
+              className="shrink-0 whitespace-nowrap rounded-full px-3 py-1 font-mono text-[12px] font-semibold uppercase tracking-wider"
+              style={{ background: TIER_COLORS[c.tier].wax, color: TIER_COLORS[c.tier].text }}
             >
               {info.label}
             </span>

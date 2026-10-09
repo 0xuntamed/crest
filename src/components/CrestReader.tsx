@@ -180,7 +180,7 @@ function Replay({ slug, highlight }: { slug: string; highlight: boolean }) {
 
   const view = useMemo(() => (prep ? stateAt(prep, n) : null), [prep, n]);
 
-  if (err) return <p className="text-center text-wax">{err}</p>;
+  if (err) return <p className="text-center text-wax-text">{err}</p>;
   if (!prep || !view) return <p className="label text-center">Loading the raw log…</p>;
 
   const elapsed = n > 0 ? prep.clock[n - 1] : 0;
@@ -191,7 +191,7 @@ function Replay({ slug, highlight }: { slug: string; highlight: boolean }) {
       <div className="sticky top-14 z-10 -mx-5 mb-8 flex flex-wrap items-center gap-3 border-b hairline bg-card/90 px-5 py-3 backdrop-blur sm:-mx-10 sm:px-10">
         <button
           onClick={() => setPlaying((p) => !p)}
-          className="grid size-10 place-items-center rounded-full bg-wax text-white"
+          className="grid size-10 place-items-center rounded-full bg-wax text-wax-ink"
           aria-label={playing ? "Pause" : "Play"}
         >
           {playing ? (

@@ -44,7 +44,7 @@ export default async function Image() {
             <div style={{ fontFamily: "Mono", fontSize: 18, letterSpacing: 4, color: C.ink3 }}>PROOF OF HUMAN AUTHORSHIP</div>
             <div style={{ display: "flex", flexDirection: "column", fontFamily: "Serif", fontSize: 124, lineHeight: 0.95, letterSpacing: -3, color: C.ink, marginTop: 20 }}>
               <span>Prove a human</span>
-              <span style={{ fontStyle: "italic", color: C.wax }}>wrote it.</span>
+              <span style={{ fontStyle: "italic", color: C.waxText }}>wrote it.</span>
             </div>
           </div>
           <div style={{ fontFamily: "Sans", fontSize: 26, lineHeight: 1.4, color: C.ink2, maxWidth: 680 }}>
