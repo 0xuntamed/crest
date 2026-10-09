@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCrest } from "@/lib/repo";
+import { siteUrl } from "@/lib/site";
 import { TIER_INFO, formatDuration, pct } from "@/lib/core";
 import { Seal } from "@/components/Seal";
 import { TIER_COLORS } from "@/lib/seal";
@@ -34,7 +35,7 @@ export default async function CrestPage(props: PageProps<"/c/[slug]">) {
   const c = await getCrest(slug);
   if (!c) notFound();
   const m = c.metrics;
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = await siteUrl();
   const info = TIER_INFO[c.tier];
   const docs = c.source === "gdocs";
   const unaccounted = m.docs?.unaccountedShare ?? 0;

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif, Newsreader } from "next/font/google";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { configuredSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
@@ -15,7 +16,7 @@ const instrument = Instrument_Serif({
 const newsreader = Newsreader({ variable: "--font-newsreader", subsets: ["latin"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(configuredSiteUrl() ?? "http://localhost:3000"),
   title: { default: "Crest: proof a human wrote it", template: "%s · Crest" },
   description:
     "Write in Crest and every keystroke joins a hash-chained, server-witnessed log. Seal it to get a signed, replayable certificate of human authorship.",

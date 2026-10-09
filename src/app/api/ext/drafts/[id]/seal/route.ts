@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getCrest, getDraft, HttpError, sealDraft } from "@/lib/repo";
 import { TIER_INFO } from "@/lib/core";
+import { siteUrl } from "@/lib/site";
 import { extHandle, preflight, requireBearer } from "@/lib/ext";
 import { readJson } from "@/lib/http";
 
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/ext/drafts/
       authorName: typeof body.authorName === "string" ? body.authorName : "",
       isPublic: body.isPublic !== false,
     });
-    const site = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
+    const site = await siteUrl();
     const crest = await getCrest(slug);
     return Response.json({ slug, url: `${site}/c/${slug}`, tier: crest ? TIER_INFO[crest.tier].label : null });
   });
